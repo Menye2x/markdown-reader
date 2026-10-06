@@ -1,0 +1,28 @@
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Node / package managers
+node_modules/
+
+# Build / coverage artifacts
+dist/
+build/
+coverage/
+
+# Browser test artifacts
+playwright-report/
+test-results/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak

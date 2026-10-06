@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Markdown Reader</title>
+<style>
+:root{--bg:#0B0F14;--panel:#111827;--panel2:#1F2937;--panel3:#273449;--text:#F8FAFC;--muted:#CBD5E1;--subtle:#94A3B8;--line:#64748B;--accent:#A5B9FF;--accent2:#D7E0FF;--accentInk:#111827;--code:#0F172A;--fileIconBg:#A5B9FF;--fileIconFg:#111827;--popoverBg:#1F2937;--popoverLine:#64748B;--toastBg:#191E28;--toastFg:#F8FAFC;--reader:920px;--fs:16px;--lh:1.75}
+*{box-sizing:border-box}html,body{height:100%;margin:0}body{font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}button,input,select{font:inherit}button{cursor:pointer}
+.app{height:100vh;min-height:0;display:grid;grid-template-columns:300px 1fr}.side{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden;background:var(--panel);border-right:1px solid var(--line)}
+.brand{padding:17px 16px;border-bottom:1px solid var(--line)}.brand h1{margin:0;font-size:17px}.brand p{margin:4px 0 0;font-size:12px;color:var(--muted)}
+.row{display:flex;gap:8px}.tools{padding:11px 12px}.btn{border:1px solid var(--line);background:var(--panel2);color:var(--text);border-radius:9px;padding:8px 10px}.btn:hover{background:var(--panel3)}.primary{background:var(--accent);border-color:var(--accent);color:var(--accentInk);font-weight:800}.grow{flex:1}
+.search{margin:0 12px 10px}.search input{width:100%;background:var(--code);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:9px 10px;outline:none}.search input:focus{border-color:var(--accent)}
+.drop{margin:0 12px 10px;padding:11px;border:1px dashed var(--line);border-radius:10px;text-align:center;color:var(--muted);font-size:11px;line-height:1.55}.drop.drag{border-color:var(--accent);background:#17213A;color:var(--text)}
+.file-list-shell{flex:1;min-height:0;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) 12px;gap:5px;padding:0 8px 0 0;overflow:hidden}.list{min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;padding:4px 0 12px 8px;scrollbar-width:none;-ms-overflow-style:none}.list::-webkit-scrollbar{display:none}.file-scrollbar{position:relative;min-height:32px;height:100%;margin:4px 0 12px;border:1px solid var(--line);border-radius:999px;background:var(--panel2);cursor:pointer;user-select:none;touch-action:none;transition:opacity .15s ease}.file-scrollbar[aria-disabled="true"]{opacity:.38;cursor:default}.file-scroll-thumb{position:absolute;left:1px;right:1px;top:1px;min-height:34px;border-radius:999px;background:var(--line);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--line) 65%,var(--text) 35%);cursor:grab;touch-action:none}.file-scrollbar:not([aria-disabled="true"]):hover .file-scroll-thumb{background:var(--accent)}.file-scrollbar.dragging .file-scroll-thumb{background:var(--accent);cursor:grabbing}.file-scrollbar:focus-visible{outline:3px solid var(--accent);outline-offset:2px}.label{padding:7px 8px 5px;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.empty{padding:30px 18px;text-align:center;color:var(--muted);font-size:12px;line-height:1.6}
+.item{width:100%;display:grid;grid-template-columns:32px minmax(0,1fr) auto 30px;gap:8px;align-items:center;border:1px solid transparent;background:transparent;color:var(--text);border-radius:9px;padding:8px;text-align:left;margin-bottom:3px}.item:hover{background:var(--panel2)}.item.active{background:var(--panel3);border-color:var(--line)}.item:focus-visible{outline:3px solid var(--accent);outline-offset:2px}.ico{width:29px;height:29px;display:grid;place-items:center;border-radius:7px;background:var(--fileIconBg);border:1px solid var(--fileIconBg);font-size:10px;font-weight:800;color:var(--fileIconFg)}.name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}.meta{font-size:10px;color:var(--muted);white-space:nowrap}.item-remove{width:30px;height:30px;display:grid;place-items:center;padding:0;border:1px solid transparent;border-radius:7px;background:transparent;color:#DC2626;font-size:18px;line-height:1;font-weight:700}.item-remove:hover{background:color-mix(in srgb,#DC2626 12%,transparent);color:#B91C1C;border-color:color-mix(in srgb,#DC2626 32%,transparent)}.item-remove:focus-visible{outline:3px solid var(--accent);outline-offset:1px}.item-remove svg{width:15px;height:15px;stroke:currentColor;stroke-width:2;stroke-linecap:round}.foot{padding:9px 12px;border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.main{min-width:0;display:flex;flex-direction:column;min-height:0;background:var(--bg)}.top{height:62px;display:flex;align-items:center;gap:12px;padding:0 18px;border-bottom:1px solid var(--line);background:var(--bg)}.title{min-width:0;flex:1}.title strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:15px}.title small{color:var(--muted);font-size:11px}.actions{display:flex;gap:7px;align-items:center}.pill{padding:5px 8px;border-radius:7px;border:1px solid var(--line);font-size:10px;color:var(--muted);background:var(--panel2)}
+.scroll{flex:1 1 auto;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}.welcome{height:100%;display:grid;place-items:center;padding:35px}.card{width:min(650px,100%);padding:38px;text-align:center;border:1px solid var(--line);border-radius:18px;background:var(--panel);box-shadow:0 18px 55px #0006}.logo{width:58px;height:58px;margin:0 auto 14px;display:grid;place-items:center;border-radius:16px;background:var(--accent);color:var(--accentInk);font-size:25px;font-weight:900}.card h2{margin:0 0 8px}.card p{margin:0 auto 17px;color:var(--muted);max-width:520px;line-height:1.6;font-size:13px}.hint{display:inline-block;background:#0F172A;border:1px solid var(--line);padding:7px 10px;border-radius:8px;font-size:11px;color:#F8FAFC}
+.doc{width:min(var(--reader),calc(100% - 42px));margin:0 auto;min-height:max-content;padding:40px 0 80px}.head{border-bottom:1px solid var(--line);padding-bottom:17px;margin-bottom:28px}.head h1{margin:0 0 6px;font-size:clamp(27px,4vw,41px);line-height:1.15;letter-spacing:-.025em}.head div{color:var(--muted);font-size:11px}
+.md{font-size:var(--fs);line-height:var(--lh);overflow-wrap:anywhere}.md h1,.md h2,.md h3,.md h4,.md h5,.md h6{line-height:1.25;margin:1.45em 0 .62em}.md h1{font-size:2em}.md h2{font-size:1.55em}.md h3{font-size:1.25em}.md h4{font-size:1.1em}.md p{margin:0 0 1em}.md a{color:var(--accent);text-decoration:none}.md a:hover{text-decoration:underline}.md blockquote{margin:1em 0;padding:.65em 1em;border-left:3px solid var(--accent);background:var(--panel2);color:var(--text);border-radius:0 8px 8px 0}.md ul,.md ol{margin:.5em 0 1em 1.5em;padding:0}.md li{margin:.28em 0}.md li.task{list-style:none;margin-left:-1.1em}.box{display:inline-grid;place-items:center;width:1em;height:1em;margin-right:.42em;border:1px solid #566075;border-radius:4px;vertical-align:-.1em;font-size:.72em}.box.checked{background:var(--accent);border-color:var(--accent);color:var(--accentInk)}.md code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.9em;padding:.12em .34em;background:var(--panel2);border:1px solid var(--line);border-radius:5px}.md pre{margin:1em 0 1.25em;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--code);overflow:auto}.md pre code{padding:0;border:0;background:none;line-height:1.6}.md hr{border:0;border-top:1px solid var(--line);margin:2em 0}.md img{max-width:100%;border:1px solid var(--line);border-radius:10px}.md table{width:100%;border-collapse:collapse;margin:1em 0;display:block;overflow:auto}.md th,.md td{border:1px solid var(--line);padding:8px 10px;text-align:left;min-width:110px}.md th{background:var(--panel2)}.plain{white-space:pre-wrap;background:var(--code);border:1px solid var(--line);border-radius:12px;padding:18px;color:var(--text);font:13px/1.7 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow:auto}
+.reader-ribbon{margin:0 12px 10px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel2)}
+.ribbon-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px}.ribbon-group{display:flex;align-items:center;gap:6px}.ribbon-label{color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap}.segmented{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#0F172A}.segment{border:0;border-right:1px solid var(--line);background:transparent;color:#E2E8F0;padding:6px 10px;font-size:11px;font-weight:800}.segment:last-child{border-right:0}.segment:hover{background:var(--panel3);color:var(--text)}.segment.active{background:var(--accent);color:var(--accentInk)}.ribbon-divider{width:1px;height:22px;background:var(--line)}.mini-btn{width:28px;height:28px;display:grid;place-items:center;padding:0;border:1px solid var(--line);border-radius:7px;background:#0F172A;color:#F8FAFC;font-weight:800}.mini-btn:hover{background:var(--panel3)}.ribbon-value{min-width:38px;text-align:center;color:var(--text);font-size:11px;font-weight:800}.toast{position:fixed;right:16px;bottom:16px;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--toastBg);color:var(--toastFg);box-shadow:0 18px 50px #0007;font-size:12px;opacity:0;transform:translateY(8px);transition:.2s;pointer-events:none;z-index:40}.toast.show{opacity:1;transform:translateY(0)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}.file-scrollbar{width:12px}.range{width:112px;height:26px;margin:0;padding:0;accent-color:var(--accent);cursor:pointer}.range.range-wide{width:150px}.slider-group{min-width:0}.slider-group .ribbon-value{min-width:44px}.selection-popover{position:fixed;display:flex;align-items:center;justify-content:center;width:auto;min-width:36px;height:36px;padding:0 11px;border:1px solid var(--popoverLine);border-radius:9px;background:var(--popoverBg);color:var(--text);box-shadow:0 12px 30px #0009;z-index:50;opacity:0;transform:translate(-50%,-100%) scale(.94);pointer-events:none;transition:opacity .12s ease,transform .12s ease;font-size:11px;font-weight:800;white-space:nowrap}.selection-popover.show{opacity:1;transform:translate(-50%,-100%) scale(1);pointer-events:auto}.selection-popover::after{content:"";position:absolute;left:50%;bottom:-6px;width:10px;height:10px;background:var(--popoverBg);border-right:1px solid var(--popoverLine);border-bottom:1px solid var(--popoverLine);transform:translateX(-50%) rotate(45deg)}.selection-popover svg{width:17px;height:17px;flex:none}.selection-popover.copied{min-width:0;padding:0 12px}.selection-popover:hover{background:var(--panel2)}@media(max-width:760px){body{overflow:auto}.app{height:auto;min-height:100vh;display:flex;flex-direction:column}.side{height:46vh;min-height:320px;border-right:0;border-bottom:1px solid var(--line)}.main{height:54vh;min-height:450px;min-height:0}.scroll{min-height:0;overflow-y:auto}.doc{width:min(var(--reader),calc(100% - 26px));padding-top:27px}.desktop{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+  <div class="brand"><h1>Markdown Reader</h1><p>Multi-file • local/offline</p></div>
+  <div class="tools row"><button id="open" class="btn primary grow">＋ Import Files</button><button id="clear" class="btn">Clear</button><input id="files" type="file" multiple hidden accept=".md,.markdown,.txt,.gitignore,text/markdown,text/plain"></div>
+  <div class="search"><input id="search" type="search" placeholder="Cari nama file…"></div>
+  <div id="drop" class="drop">Drag & drop file di sini<br><b>.md</b> · <b>.markdown</b> · <b>.txt</b> · <b>.gitignore</b></div>
+  <div class="reader-ribbon" aria-label="Reader Settings"><div class="ribbon-row">
+<div class="ribbon-group"><span class="ribbon-label">Tema</span><div class="segmented" role="group" aria-label="Pilih tema"><button id="themeDark" class="segment" data-theme="dark" aria-pressed="false">Dark</button><button id="themeLight" class="segment" data-theme="light" aria-pressed="false">Light</button></div></div>
+<div class="ribbon-divider" aria-hidden="true"></div>
+<div class="ribbon-group slider-group"><span class="ribbon-label">Teks</span><input id="fontRange" class="range" type="range" min="13" max="22" step="1" value="16" aria-label="Ukuran teks"><output id="fontValue" class="ribbon-value">16px</output></div>
+<div class="ribbon-divider" aria-hidden="true"></div>
+<div class="ribbon-group slider-group"><span class="ribbon-label">Lebar</span><input id="widthRange" class="range range-wide" type="range" min="640" max="1180" step="20" value="920" aria-label="Lebar reader"><output id="widthValue" class="ribbon-value">920px</output></div>
+<div class="ribbon-divider" aria-hidden="true"></div>
+<div class="ribbon-group slider-group"><span class="ribbon-label">Spasi</span><input id="lineRange" class="range" type="range" min="1.35" max="2.15" step="0.05" value="1.75" aria-label="Line spacing"><output id="lineValue" class="ribbon-value">1.75</output></div>
+</div></div>
+  <div class="file-list-shell">
+    <div id="list" class="list"><div class="label">Files</div><div id="empty" class="empty">Belum ada file.<br>Import satu atau banyak file sekaligus.</div></div>
+    <div id="fileScrollbar" class="file-scrollbar" role="scrollbar" aria-controls="list" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Scroll daftar file" tabindex="0">
+      <div id="fileScrollThumb" class="file-scroll-thumb"></div>
+    </div>
+  </div>
+  <div class="foot"><span id="count">0 file</span><span>Browser only</span></div>
+</aside>
+<main class="main">
+  <header class="top"><div class="title"><strong id="current">No document</strong><small id="sub">Import file untuk mulai membaca</small></div><div class="actions"><span id="type" class="pill desktop">—</span><button id="prev" class="btn" title="File sebelumnya">←</button><button id="next" class="btn" title="File berikutnya">→</button></div></header>
+  <div id="scroll" class="scroll">
+    <section id="welcome" class="welcome"><div class="card"><div class="logo">M</div><h2>Siap membaca</h2><p>Masukkan beberapa file Markdown, TXT, atau <code>.gitignore</code>. Isi file dibaca langsung di browser dan tidak dikirim ke server.</p><span class="hint">Ctrl/Cmd + O untuk Import Files</span></div></section>
+    <article id="doc" class="doc" hidden><div class="head"><h1 id="docTitle"></h1><div id="docMeta"></div></div><div id="output" class="md"></div></article>
+  </div>
+</main>
+</div>
+<div id="toast" class="toast"></div>
+<button id="selectionCopy" class="selection-popover" type="button" aria-label="Copy teks yang dipilih" title="Copy teks yang dipilih"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id), S={files:[],active:null,query:'',cfg:{fs:16,width:920,lh:1.75,theme:'dark'}};
+const allowed=n=>{const x=n.toLowerCase();return x.endsWith('.md')||x.endsWith('.markdown')||x.endsWith('.txt')||x==='.gitignore'||x.endsWith('.gitignore')};
+const kind=n=>{const x=n.toLowerCase();return x==='.gitignore'||x.endsWith('.gitignore')?'GITIGNORE':x.endsWith('.txt')?'TXT':'MARKDOWN'};
+const bytes=n=>n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB';
+const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
+const url=s=>{try{const u=new URL(s,location.href);return ['http:','https:','mailto:'].includes(u.protocol)?esc(u.href):'#'}catch{return '#'}};
+function inline(x){let s=esc(x),codes=[];s=s.replace(/`([^`]+)`/g,(_,a)=>'\u0001'+(codes.push('<code>'+a+'</code>')-1)+'\u0002');s=s.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g,(_,a,b)=>`<img src="${url(b)}" alt="${a}" loading="lazy">`);s=s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,(_,a,b)=>`<a href="${url(b)}" target="_blank" rel="noopener noreferrer">${a}</a>`);s=s.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/__(.+?)__/g,'<strong>$1</strong>').replace(/~~(.+?)~~/g,'<del>$1</del>').replace(/(?<!\*)\*([^*\n]+)\*(?!\*)/g,'<em>$1</em>').replace(/(?<!_)_([^_\n]+)_(?!_)/g,'<em>$1</em>');s=s.replace(/(^|\s)(https?:\/\/[^\s<]+)/g,(_,p,u)=>p+`<a href="${url(u)}" target="_blank" rel="noopener noreferrer">${u}</a>`);return s.replace(/\u0001(\d+)\u0002/g,(_,i)=>codes[+i])}
+function md(text){const L=text.replace(/\r\n?/g,'\n').split('\n'),o=[];let p=[],code=false,buf=[],list=null,quote=false,q=[];const fp=()=>{if(p.length){o.push('<p>'+inline(p.join('\n')).replaceAll('\n','<br>')+'</p>');p=[]}},fl=()=>{if(list){o.push('</'+list+'>');list=null}},fq=()=>{if(quote){fp();fl();o.push('<blockquote>'+md(q.join('\n'))+'</blockquote>');q=[];quote=false}};for(let i=0;i<L.length;i++){let l=L[i];if(code){if(/^\s*```/.test(l)){o.push('<pre><code>'+esc(buf.join('\n'))+'</code></pre>');code=false;buf=[]}else buf.push(l);continue}if(/^\s*```/.test(l)){fp();fl();fq();code=true;buf=[];continue}if(/^\s*$/.test(l)){fp();fl();fq();o.push('');continue}let h=l.match(/^\s*(#{1,6})\s+(.+?)\s*#*\s*$/);if(h){fp();fl();fq();let n=h[1].length;o.push(`<h${n}>${inline(h[2])}</h${n}>`);continue}if(/^\s*((\*\s*){3,}|(-\s*){3,}|(_\s*){3,})$/.test(l)){fp();fl();fq();o.push('<hr>');continue}let b=l.match(/^\s*>\s?(.*)$/);if(b){fp();fl();quote=true;q.push(b[1]);continue}else fq();let u=l.match(/^\s*[-+*]\s+(.*)$/),n=l.match(/^\s*\d+[.)]\s+(.*)$/);if(u||n){fp();let t=u?'ul':'ol';if(list&&list!==t)fl();if(!list){list=t;o.push('<'+list+'>')}let item=(u||n)[1],task=item.match(/^\[( |x|X)\]\s+(.*)$/);if(task){let c=task[1].toLowerCase()==='x';o.push(`<li class="task"><span class="box${c?' checked':''}">${c?'✓':''}</span>${inline(task[2])}</li>`)}else o.push('<li>'+inline(item)+'</li>');continue}else fl();if(l.includes('|')&&i+1<L.length&&/^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)+\|?\s*$/.test(L[i+1])){fp();const row=x=>x.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(v=>v.trim()),hs=row(l),al=row(L[++i]);o.push('<table><thead><tr>'+hs.map((x,j)=>'<th>'+inline(x)+'</th>').join('')+'</tr></thead><tbody>');for(i++;i<L.length&&L[i].includes('|')&&!/^\s*$/.test(L[i]);i++){let c=row(L[i]);o.push('<tr>'+hs.map((_,j)=>'<td>'+inline(c[j]||'')+'</td>').join('')+'</tr>')}i--;o.push('</tbody></table>');continue}p.push(l)}if(code)o.push('<pre><code>'+esc(buf.join('\n'))+'</code></pre>');fp();fl();fq();return o.join('\n')}
+const title=(n,t)=>{const m=t.match(/^\s*#\s+(.+?)\s*$/m);return m?m[1].replace(/[*_`]/g,''):n};
+function theme(){
+ if(S.cfg.theme==='light'){
+  const vars=[['--bg','#F8FAFC'],['--panel','#FFFFFF'],['--panel2','#F1F5F9'],['--panel3','#E2E8F0'],['--text','#0F172A'],['--muted','#475569'],['--subtle','#64748B'],['--line','#CBD5E1'],['--accent','#1D4ED8'],['--accent2','#1E3A8A'],['--accentInk','#FFFFFF'],['--code','#F1F5F9'],['--fileIconBg','#1D4ED8'],['--fileIconFg','#FFFFFF'],['--popoverBg','#F1F5F9'],['--popoverLine','#64748B'],['--toastBg','#FFFFFF'],['--toastFg','#0F172A']];
+  vars.forEach(([a,b])=>document.documentElement.style.setProperty(a,b));
+ }else{
+  const vars=[['--bg','#0B0F14'],['--panel','#111827'],['--panel2','#1F2937'],['--panel3','#273449'],['--text','#F8FAFC'],['--muted','#CBD5E1'],['--subtle','#94A3B8'],['--line','#64748B'],['--accent','#A5B9FF'],['--accent2','#D7E0FF'],['--accentInk','#111827'],['--code','#0F172A'],['--fileIconBg','#A5B9FF'],['--fileIconFg','#111827'],['--popoverBg','#1F2937'],['--popoverLine','#64748B'],['--toastBg','#191E28'],['--toastFg','#F8FAFC']];
+  vars.forEach(([a,b])=>document.documentElement.style.setProperty(a,b));
+ }
+ document.documentElement.style.setProperty('--fs',S.cfg.fs+'px');document.documentElement.style.setProperty('--reader',S.cfg.width+'px');document.documentElement.style.setProperty('--lh',S.cfg.lh);syncRibbon();
+}
+function syncRibbon(){
+ $('fontRange').value=S.cfg.fs;$('widthRange').value=S.cfg.width;$('lineRange').value=S.cfg.lh;
+ $('fontValue').textContent=S.cfg.fs+'px';$('widthValue').textContent=S.cfg.width+'px';$('lineValue').textContent=Number(S.cfg.lh).toFixed(2);
+ [['themeDark','dark'],['themeLight','light']].forEach(([id,t])=>{const on=S.cfg.theme===t;$(id).classList.toggle('active',on);$(id).setAttribute('aria-pressed',String(on));});
+}
+function save(){localStorage.setItem('md-reader',JSON.stringify(S.cfg))}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2200)}
+const fileList=$('list'),fileScrollbar=$('fileScrollbar'),fileScrollThumb=$('fileScrollThumb');
+let scrollbarDrag=null;
+function syncFileScrollbar(){
+ const max=fileList.scrollHeight-fileList.clientHeight,track=fileScrollbar.clientHeight-2;
+ if(max<=0||track<=0){
+  fileScrollbar.setAttribute('aria-disabled','true');fileScrollbar.setAttribute('aria-valuenow','0');fileScrollThumb.style.top='1px';fileScrollThumb.style.height='calc(100% - 2px)';return;
+ }
+ fileScrollbar.setAttribute('aria-disabled','false');
+ const thumbH=Math.max(34,Math.round(track*(fileList.clientHeight/fileList.scrollHeight)));
+ const maxTop=Math.max(1,track-thumbH);
+ const top=1+Math.round((fileList.scrollTop/max)*maxTop);
+ fileScrollThumb.style.height=thumbH+'px';fileScrollThumb.style.top=top+'px';
+ fileScrollbar.setAttribute('aria-valuenow',String(Math.round((fileList.scrollTop/max)*100)));
+}
+function scrollListToRatio(r){
+ const max=fileList.scrollHeight-fileList.clientHeight;
+ if(max<=0)return;
+ fileList.scrollTop=Math.max(0,Math.min(1,r))*max;
+}
+fileList.addEventListener('scroll',syncFileScrollbar,{passive:true});
+window.addEventListener('resize',syncFileScrollbar,{passive:true});
+fileScrollbar.addEventListener('pointerdown',e=>{
+ if(fileScrollbar.getAttribute('aria-disabled')==='true')return;
+ if(e.target===fileScrollThumb){
+  const thumbRect=fileScrollThumb.getBoundingClientRect();
+  scrollbarDrag={startY:e.clientY,startTop:thumbRect.top-fileScrollbar.getBoundingClientRect().top,pointerId:e.pointerId};
+  fileScrollbar.classList.add('dragging');fileScrollThumb.setPointerCapture?.(e.pointerId);e.preventDefault();return;
+ }
+ const r=fileScrollbar.getBoundingClientRect();
+ scrollListToRatio((e.clientY-r.top)/r.height);
+});
+fileScrollbar.addEventListener('pointermove',e=>{
+ if(!scrollbarDrag||e.pointerId!==scrollbarDrag.pointerId)return;
+ const r=fileScrollbar.getBoundingClientRect(),track=r.height-2,thumbH=fileScrollThumb.getBoundingClientRect().height,maxTop=Math.max(1,track-thumbH);
+ const top=Math.max(0,Math.min(maxTop,scrollbarDrag.startTop+(e.clientY-scrollbarDrag.startY)));
+ scrollListToRatio(top/maxTop);e.preventDefault();
+});
+fileScrollbar.addEventListener('pointerup',e=>{if(scrollbarDrag&&e.pointerId===scrollbarDrag.pointerId){scrollbarDrag=null;fileScrollbar.classList.remove('dragging')}});
+fileScrollbar.addEventListener('pointercancel',e=>{if(scrollbarDrag&&e.pointerId===scrollbarDrag.pointerId){scrollbarDrag=null;fileScrollbar.classList.remove('dragging')}});
+fileScrollbar.addEventListener('keydown',e=>{
+ if(fileScrollbar.getAttribute('aria-disabled')==='true')return;
+ const page=fileList.clientHeight;
+ if(e.key==='ArrowDown'){fileList.scrollTop+=40;e.preventDefault()}
+ else if(e.key==='ArrowUp'){fileList.scrollTop-=40;e.preventDefault()}
+ else if(e.key==='PageDown'){fileList.scrollTop+=page;e.preventDefault()}
+ else if(e.key==='PageUp'){fileList.scrollTop-=page;e.preventDefault()}
+ else if(e.key==='Home'){fileList.scrollTop=0;e.preventDefault()}
+ else if(e.key==='End'){fileList.scrollTop=fileList.scrollHeight;e.preventDefault()}
+});
+function renderList(){const listEl=$('list'),previousScrollTop=listEl.scrollTop;document.querySelectorAll('.item').forEach(e=>e.remove());const vis=S.files.filter(f=>f.name.toLowerCase().includes(S.query.toLowerCase()));$('empty').style.display=vis.length?'none':'block';for(const f of vis){const b=document.createElement('div');b.className='item'+(f.id===S.active?' active':'');b.setAttribute('role','button');b.setAttribute('tabindex','0');b.setAttribute('aria-label','Buka '+f.name);b.innerHTML=`<span class="ico" aria-hidden="true">${f.type==='MARKDOWN'?'MD':f.type==='TXT'?'TXT':'GI'}</span><span class="name" title="${esc(f.name)}">${esc(f.name)}</span><span class="meta">${bytes(f.size)}</span><button class="item-remove" type="button" title="Hapus ${esc(f.name)}" aria-label="Hapus ${esc(f.name)}"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>`;const openFile=()=>{S.active=f.id;renderList();renderActive()};b.onclick=e=>{if(e.target.closest('.item-remove'))return;openFile()};b.onkeydown=e=>{if(e.target!==b)return;if(e.key==='Enter'||e.key===' '){e.preventDefault();openFile()}};b.querySelector('.item-remove').onclick=e=>{e.stopPropagation();removeFile(f.id)};$('list').appendChild(b)}listEl.scrollTop=Math.min(previousScrollTop,Math.max(0,listEl.scrollHeight-listEl.clientHeight));$('count').textContent=S.files.length+' file'+(S.files.length===1?'':'s');requestAnimationFrame(syncFileScrollbar)}
+function removeFile(id){const i=S.files.findIndex(f=>f.id===id);if(i<0)return;const wasActive=S.active===id;const removed=S.files[i];S.files.splice(i,1);if(!S.files.length){S.active=null}else if(wasActive){S.active=S.files[Math.min(i,S.files.length-1)].id}renderList();renderActive();toast(removed.name+' dihapus.')}
+function renderActive(){const f=S.files.find(x=>x.id===S.active);if(!f){$('doc').hidden=true;$('welcome').style.display='grid';$('current').textContent='No document';$('sub').textContent='Import file untuk mulai membaca';$('type').textContent='—';return}$('doc').hidden=false;$('welcome').style.display='none';$('current').textContent=f.name;$('sub').textContent=bytes(f.size)+' · '+f.type;$('type').textContent=f.type;$('docTitle').textContent=title(f.name,f.text);$('docMeta').textContent=f.name+' · '+f.text.split(/\n/).length+' baris · '+bytes(f.size);const out=$('output');if(f.type==='MARKDOWN'){out.className='md';out.innerHTML=md(f.text)}else{out.className='plain';out.textContent=f.text}$('scroll').scrollTo({top:0,behavior:'smooth'})}
+async function add(list){const files=Array.from(list||[]),ok=files.filter(f=>allowed(f.name)),bad=files.length-ok.length;if(bad)toast(bad+' file diabaikan (format tidak didukung).');if(!ok.length)return;for(const f of ok){try{S.files.push({id:(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)),name:f.name,size:f.size,type:kind(f.name),text:await f.text()})}catch(e){console.error(e)}}if(!S.active&&S.files.length)S.active=S.files[0].id;renderList();renderActive();toast(ok.length+' file berhasil di-import.')}
+$('open').onclick=()=>$('files').click();$('files').onchange=e=>{add(e.target.files);e.target.value=''};$('clear').onclick=()=>{S.files=[];S.active=null;S.query='';$('search').value='';renderList();renderActive();toast('Semua file dihapus.')};$('search').oninput=e=>{S.query=e.target.value;renderList()};$('prev').onclick=()=>nav(-1);$('next').onclick=()=>nav(1);function nav(d){if(!S.files.length)return;let i=S.files.findIndex(f=>f.id===S.active);S.active=S.files[(i+d+S.files.length)%S.files.length].id;renderList();renderActive()}
+const drop=$('drop');['dragenter','dragover'].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.add('drag')}));['dragleave','drop'].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.remove('drag')}));drop.ondrop=e=>add(e.dataTransfer.files);
+document.onkeydown=e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='o'){e.preventDefault();$('files').click()}if(e.altKey&&e.key==='ArrowLeft')nav(-1);if(e.altKey&&e.key==='ArrowRight')nav(1)};
+try{const c=JSON.parse(localStorage.getItem('md-reader')||'null');if(c)S.cfg={...S.cfg,...c}}catch{}
+theme();renderList();renderActive();
+$('themeDark').onclick=()=>{S.cfg.theme='dark';theme();save()};
+$('themeLight').onclick=()=>{S.cfg.theme='light';theme();save()};
+$('fontRange').oninput=e=>{S.cfg.fs=Number(e.target.value);theme();save()};
+$('widthRange').oninput=e=>{S.cfg.width=Number(e.target.value);theme();save()};
+$('lineRange').oninput=e=>{S.cfg.lh=Number(Number(e.target.value).toFixed(2));theme();save()};
+
+let selectedText='',selectionRect=null;
+const selectionCopy=$('selectionCopy');
+function hideSelectionCopy(){selectionCopy.classList.remove('show','copied');selectionCopy.innerHTML=copyIcon;selectionCopy.setAttribute('aria-label','Copy teks yang dipilih');selectionCopy.title='Copy teks yang dipilih';selectedText='';selectionRect=null}
+function updateSelectionCopy(){
+ const sel=window.getSelection();
+ if(!sel||sel.rangeCount===0||sel.isCollapsed){hideSelectionCopy();return}
+ const text=sel.toString().trim();
+ if(!text){hideSelectionCopy();return}
+ const node=sel.anchorNode;
+ if(!node||!$('output').contains(node)){hideSelectionCopy();return}
+ const range=sel.getRangeAt(0),rect=range.getBoundingClientRect();
+ if(!rect.width&&!rect.height){hideSelectionCopy();return}
+ selectedText=text;selectionRect=rect;
+ const left=Math.max(22,Math.min(window.innerWidth-22,rect.left+rect.width/2));
+ const top=Math.max(44,rect.top-10);
+ selectionCopy.style.left=left+'px';selectionCopy.style.top=top+'px';
+ selectionCopy.classList.add('show');
+}
+document.addEventListener('selectionchange',()=>requestAnimationFrame(updateSelectionCopy));
+$('scroll').addEventListener('scroll',()=>{if(selectionCopy.classList.contains('show'))updateSelectionCopy()},{passive:true});
+window.addEventListener('resize',()=>{if(selectionCopy.classList.contains('show'))updateSelectionCopy()},{passive:true});
+selectionCopy.addEventListener('mousedown',e=>e.preventDefault());
+const copyIcon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+selectionCopy.onclick=async()=>{
+ const text=selectedText||window.getSelection().toString().trim();
+ if(!text)return;
+ let copied=false;
+ try{await navigator.clipboard.writeText(text);copied=true}catch{
+  const ta=document.createElement('textarea');ta.value=text;ta.setAttribute('readonly','');ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+  try{copied=document.execCommand('copy')}catch{copied=false}
+  ta.remove();
+ }
+ if(copied){
+  selectionCopy.innerHTML='<span>Selected Text Copied!</span>';
+  selectionCopy.setAttribute('aria-label','Selected Text Copied!');
+  selectionCopy.title='Selected Text Copied!';
+  selectionCopy.classList.add('copied');
+ }else{
+  selectionCopy.innerHTML=copyIcon;
+  selectionCopy.setAttribute('aria-label','Copy teks yang dipilih');
+  selectionCopy.title='Copy teks yang dipilih';
+  selectionCopy.classList.remove('copied');
+ }
+};
+document.addEventListener('mousedown',e=>{if(!selectionCopy.contains(e.target)){setTimeout(()=>{const sel=window.getSelection();if(!sel||sel.isCollapsed)hideSelectionCopy()},0)}});
+})();
+</script>
+</body></html>

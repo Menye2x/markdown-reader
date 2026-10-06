@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MD Reader - Split View</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'wcag-blue': '#1d4ed8',
+                        'wcag-blue-hover': '#1e40af',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Marked.js & DOMPurify -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        .dark ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        .dark ::-webkit-scrollbar-thumb { background: #475569; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
+        /* Desktop Collapsed Sidebar */
+        @media (min-width: 1024px) {
+            .desktop-collapsed { margin-left: -18rem; visibility: hidden; }
+        }
+
+        /* WCAG AA Compliant CSS Variables untuk Light & Dark Mode */
+        :root {
+            --md-text: #334155;
+            --md-heading: #0f172a;
+            --md-border: #cbd5e1;
+            --md-link: #1d4ed8;
+            --md-quote-bg: #f8fafc;
+            --md-quote-text: #4b5563;
+            --md-quote-border: #94a3b8;
+            --md-code-bg: #f1f5f9;
+            --md-code-text: #b91c1c;
+            --md-pre-bg: #1e293b;
+            --md-pre-text: #f8fafc;
+        }
+
+        .dark {
+            --md-text: #cbd5e1;
+            --md-heading: #f8fafc;
+            --md-border: #475569;
+            --md-link: #60a5fa;
+            --md-quote-bg: #0f172a;
+            --md-quote-text: #94a3b8;
+            --md-quote-border: #64748b;
+            --md-code-bg: #1e293b;
+            --md-code-text: #fca5a5;
+            --md-pre-bg: #090d16;
+            --md-pre-text: #f8fafc;
+        }
+
+        /* Typography & Aggressive Text Wrap */
+        .markdown-body { 
+            word-wrap: break-word; 
+            overflow-wrap: anywhere; 
+            word-break: break-word; 
+            color: var(--md-text); 
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 { color: var(--md-heading); }
+        .markdown-body h1 { font-size: 2em; font-weight: 700; margin-bottom: 0.5em; margin-top: 1em; border-bottom: 1px solid var(--md-border); padding-bottom: 0.3em; }
+        .markdown-body h2 { font-size: 1.5em; font-weight: 600; margin-bottom: 0.5em; margin-top: 1em; border-bottom: 1px solid var(--md-border); padding-bottom: 0.3em; }
+        .markdown-body h3 { font-size: 1.25em; font-weight: 600; margin-bottom: 0.5em; margin-top: 1em; }
+        .markdown-body p, .markdown-body li { margin-bottom: 1em; color: var(--md-text); }
+        .markdown-body ul { list-style-type: disc; padding-left: 2em; margin-bottom: 1em; }
+        .markdown-body ol { list-style-type: decimal; padding-left: 2em; margin-bottom: 1em; }
+        .markdown-body a { color: var(--md-link); text-decoration: underline; font-weight: 500; }
+        .markdown-body blockquote { border-left: 4px solid var(--md-quote-border); padding-left: 1em; color: var(--md-quote-text); margin-bottom: 1em; font-style: italic; background: var(--md-quote-bg); padding: 0.5em 1em; border-radius: 4px; }
+        .markdown-body code { background-color: var(--md-code-bg); padding: 0.2em 0.4em; border-radius: 4px; font-family: monospace; font-size: 0.9em; color: var(--md-code-text); }
+        .markdown-body table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
+        .markdown-body th, .markdown-body td { border: 1px solid var(--md-border); padding: 0.5em; text-align: left; }
+        .markdown-body th { background-color: var(--md-quote-bg); font-weight: 600; color: var(--md-heading); }
+        .markdown-body img { max-width: 100%; border-radius: 6px; margin-bottom: 1em; }
+        
+        .markdown-body pre { 
+            background-color: var(--md-pre-bg); 
+            color: var(--md-pre-text); 
+            padding: 1em; 
+            border-radius: 6px; 
+            margin-bottom: 1em;
+            white-space: pre-wrap !important;       
+            word-wrap: break-word !important;       
+            overflow-wrap: anywhere !important;     
+            word-break: break-word !important; 
+            max-width: 100%;
+            overflow-x: hidden; 
+        }
+        .markdown-body pre code { 
+            background-color: transparent; 
+            color: inherit; 
+            padding: 0; 
+            white-space: pre-wrap !important;
+            word-break: break-word !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-slate-100 h-screen overflow-hidden flex transition-colors duration-200">
+
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-black/60 z-20 hidden lg:hidden backdrop-blur-sm" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="bg-white dark:bg-slate-900 w-72 flex-shrink-0 h-full border-r border-gray-300 dark:border-slate-800 flex flex-col fixed lg:relative z-30 transition-all duration-300 transform -translate-x-full lg:translate-x-0 shadow-xl lg:shadow-none">
+        <div class="p-4 border-b border-gray-300 dark:border-slate-800 flex justify-between items-center bg-gray-50 dark:bg-slate-900/50 h-16">
+            <h1 class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <i class="fa-brands fa-markdown text-wcag-blue dark:text-blue-500"></i>
+                MD Reader
+            </h1>
+            <button onclick="toggleSidebar()" class="lg:hidden text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white focus:outline-none p-1">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+        </div>
+
+        <div class="p-4 flex flex-col flex-1 overflow-hidden">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-xs font-bold text-gray-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-folder-tree"></i> Dokumen
+                </h2>
+            </div>
+            
+            <div id="file-list" class="space-y-1.5 overflow-y-auto flex-1 pr-1">
+                <p class="text-sm text-gray-600 dark:text-slate-400 italic flex items-center gap-2" id="empty-list-msg">
+                    <i class="fa-solid fa-circle-info"></i> Belum ada file.
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col h-full w-full relative min-w-0">
+        <!-- Toolbar Header -->
+        <header class="h-16 bg-white dark:bg-slate-900 border-b border-gray-300 dark:border-slate-800 flex items-center justify-between px-4 z-10 shadow-sm flex-shrink-0 transition-colors duration-200">
+            <div class="flex items-center gap-4 min-w-0">
+                <button onclick="toggleSidebar()" class="text-gray-700 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white focus:outline-none transition-transform hover:scale-105 p-1 flex-shrink-0" title="Sembunyikan/Tampilkan Daftar File">
+                    <i class="fa-solid fa-bars text-xl"></i>
+                </button>
+                <div id="active-filename-display" class="font-semibold text-gray-800 dark:text-slate-200 hidden lg:flex items-center gap-2 truncate min-w-0">
+                    <i class="fa-solid fa-desktop text-gray-500 dark:text-slate-400 flex-shrink-0"></i> Mode Layar Penuh
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                <!-- Theme Toggle -->
+                <button onclick="toggleTheme()" class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 transition-colors border border-gray-300 dark:border-slate-700 focus:outline-none" title="Ubah Tema">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+
+                <div class="w-px h-8 bg-gray-300 dark:bg-slate-800 hidden sm:block"></div>
+
+                <!-- Split View Toggle -->
+                <button id="btn-split-toggle" onclick="toggleSplitMode()" class="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200 font-semibold py-2 px-3 lg:px-4 rounded-lg transition-colors border border-gray-300 dark:border-slate-700 text-sm lg:text-base">
+                    <i id="split-icon" class="fa-solid fa-table-columns text-gray-700 dark:text-slate-300"></i>
+                    <span id="split-btn-text" class="hidden sm:inline">Mode Belah</span>
+                </button>
+
+                <!-- Import Button -->
+                <input type="file" id="file-import" multiple accept=".md,.txt,.gitignore" class="hidden" onchange="handleImport(event)">
+                <label for="file-import" class="cursor-pointer flex items-center gap-2 bg-wcag-blue hover:bg-wcag-blue-hover text-white font-semibold py-2 px-3 lg:px-4 rounded-lg transition-colors shadow-sm text-sm lg:text-base mb-0 border border-blue-700">
+                    <i class="fa-solid fa-file-import"></i>
+                    <span class="hidden sm:inline">Import Files</span>
+                </label>
+            </div>
+        </header>
+
+        <!-- Reader Container -->
+        <div class="flex-1 overflow-hidden relative bg-white dark:bg-slate-950 flex flex-col min-w-0 transition-colors duration-200">
+            
+            <!-- Single View Mode -->
+            <div id="view-single" class="absolute inset-0 overflow-y-auto p-4 lg:p-10 min-w-0">
+                <div class="max-w-5xl mx-auto w-full">
+                    <div id="single-placeholder" class="h-full flex flex-col items-center justify-center text-gray-500 dark:text-slate-400 mt-32">
+                        <i class="fa-solid fa-inbox text-6xl mb-4 text-gray-400 dark:text-slate-600"></i>
+                        <p class="text-lg font-bold text-gray-800 dark:text-slate-200">Belum ada dokumen yang dipilih.</p>
+                        <p class="text-sm mt-1 text-gray-600 dark:text-slate-400">Gunakan tombol <i class="fa-solid fa-file-import mx-1"></i> Import Files di kanan atas.</p>
+                    </div>
+                    <div id="single-content" class="markdown-body hidden w-full pb-20"></div>
+                </div>
+            </div>
+
+            <!-- Split View Mode -->
+            <div id="view-split" class="absolute inset-0 hidden flex-col md:flex-row min-w-0">
+                <!-- Panel A -->
+                <div class="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-gray-300 dark:border-slate-800 h-1/2 md:h-full min-w-0 bg-white dark:bg-slate-950">
+                    <div class="bg-gray-100 dark:bg-slate-900 p-2 border-b border-gray-300 dark:border-slate-800 flex items-center gap-2 flex-shrink-0">
+                        <span class="bg-wcag-blue text-white text-xs font-bold px-2 py-1.5 rounded flex items-center gap-1 border border-blue-700">
+                            <i class="fa-solid fa-a"></i>
+                        </span>
+                        <select id="dropdown-a" onchange="renderPanel('a', this.value)" class="flex-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-gray-900 dark:text-slate-100 text-sm rounded-lg focus:ring-blue-500 block w-full p-1.5 font-semibold truncate">
+                            <option value="-1">-- Pilih Dokumen Kiri --</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4 lg:p-6 relative min-w-0">
+                        <div id="content-a" class="markdown-body max-w-full pb-10"></div>
+                        <div id="placeholder-a" class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 dark:text-slate-500 text-sm font-semibold">
+                            <i class="fa-regular fa-hand-pointer text-3xl mb-2 text-gray-400 dark:text-slate-600"></i>
+                            Pilih dokumen di atas
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel B -->
+                <div class="flex-1 flex flex-col h-1/2 md:h-full min-w-0 bg-white dark:bg-slate-950">
+                    <div class="bg-gray-100 dark:bg-slate-900 p-2 border-b border-gray-300 dark:border-slate-800 flex items-center gap-2 flex-shrink-0">
+                        <span class="bg-purple-700 text-white text-xs font-bold px-2 py-1.5 rounded flex items-center gap-1 border border-purple-900">
+                            <i class="fa-solid fa-b"></i>
+                        </span>
+                        <select id="dropdown-b" onchange="renderPanel('b', this.value)" class="flex-1 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 text-gray-900 dark:text-slate-100 text-sm rounded-lg focus:ring-purple-500 block w-full p-1.5 font-semibold truncate">
+                            <option value="-1">-- Pilih Dokumen Kanan --</option>
+                        </select>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-4 lg:p-6 relative min-w-0">
+                        <div id="content-b" class="markdown-body max-w-full pb-10"></div>
+                        <div id="placeholder-b" class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 dark:text-slate-500 text-sm font-semibold">
+                            <i class="fa-regular fa-hand-pointer text-3xl mb-2 text-gray-400 dark:text-slate-600"></i>
+                            Pilih dokumen di atas
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Application Script -->
+    <script>
+        // Init Theme on Load
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const themeIcon = document.getElementById('theme-icon');
+            if (document.documentElement.classList.contains('dark')) {
+                themeIcon.className = 'fa-solid fa-sun text-amber-400';
+            } else {
+                themeIcon.className = 'fa-solid fa-moon';
+            }
+        });
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            const themeIcon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.theme = 'light';
+                themeIcon.className = 'fa-solid fa-moon text-gray-700';
+            } else {
+                html.classList.add('dark');
+                localStorage.theme = 'dark';
+                themeIcon.className = 'fa-solid fa-sun text-amber-400';
+            }
+        }
+
+        let importedFiles = []; 
+        let isSplitMode = false;
+        let activeSingleFileId = null;
+        
+        const fileListEl = document.getElementById('file-list');
+        const emptyMsgEl = document.getElementById('empty-list-msg');
+        const viewSingleEl = document.getElementById('view-single');
+        const viewSplitEl = document.getElementById('view-split');
+        const singleContentEl = document.getElementById('single-content');
+        const singlePlaceholderEl = document.getElementById('single-placeholder');
+        const headerTitleEl = document.getElementById('active-filename-display');
+        const splitBtnText = document.getElementById('split-btn-text');
+        const splitIcon = document.getElementById('split-icon');
+        const dropdownA = document.getElementById('dropdown-a');
+        const dropdownB = document.getElementById('dropdown-b');
+        const contentA = document.getElementById('content-a');
+        const contentB = document.getElementById('content-b');
+        const placeholderA = document.getElementById('placeholder-a');
+        const placeholderB = document.getElementById('placeholder-b');
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+
+            if (window.innerWidth < 1024) {
+                sidebar.classList.toggle('-translate-x-full');
+                overlay.classList.toggle('hidden');
+            } else {
+                sidebar.classList.toggle('desktop-collapsed');
+            }
+        }
+
+        function generateId() {
+            return 'file_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        }
+
+        function handleImport(event) {
+            const files = event.target.files;
+            if (files.length === 0) return;
+
+            const readPromises = Array.from(files).map(file => {
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        resolve({
+                            id: generateId(), 
+                            name: file.name,
+                            content: e.target.result,
+                            ext: file.name.split('.').pop().toLowerCase()
+                        });
+                    };
+                    reader.readAsText(file);
+                });
+            });
+
+            Promise.all(readPromises).then(results => {
+                importedFiles = importedFiles.concat(results);
+                renderSidebarList();
+                updateSplitDropdowns();
+                
+                if (importedFiles.length > 0 && activeSingleFileId === null && !isSplitMode) {
+                    openInSingleView(importedFiles[0].id);
+                }
+                event.target.value = '';
+            });
+        }
+
+        function renderSidebarList() {
+            if (importedFiles.length > 0) {
+                emptyMsgEl.style.display = 'none';
+            } else {
+                emptyMsgEl.style.display = 'flex';
+            }
+            
+            fileListEl.innerHTML = '';
+            
+            importedFiles.forEach((file) => {
+                let iconHtml = '';
+                if(file.ext === 'md') {
+                    iconHtml = `<i class="fa-brands fa-markdown text-wcag-blue dark:text-blue-400 text-lg w-5 text-center flex-shrink-0"></i>`;
+                } else {
+                    iconHtml = `<i class="fa-regular fa-file-lines text-gray-500 dark:text-slate-400 text-lg w-5 text-center flex-shrink-0"></i>`;
+                }
+
+                const container = document.createElement('div');
+                const isActive = activeSingleFileId === file.id && !isSplitMode;
+                
+                container.className = `group flex items-center justify-between w-full text-left px-2 py-1.5 rounded-lg text-sm transition-colors border ${isActive ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-200 dark:border-blue-900' : 'border-transparent hover:bg-gray-100 dark:hover:bg-slate-800/80'}`;
+                
+                const fileBtn = document.createElement('button');
+                fileBtn.className = `flex-1 flex items-center gap-2 truncate text-left p-1 focus:outline-none ${isActive ? 'text-wcag-blue dark:text-blue-300 font-bold' : 'text-gray-800 dark:text-slate-200 font-medium'}`;
+                fileBtn.innerHTML = `${iconHtml} <span class="truncate" title="${file.name}">${file.name}</span>`;
+                fileBtn.onclick = () => {
+                    if (isSplitMode) toggleSplitMode(false); 
+                    openInSingleView(file.id);
+                    if(window.innerWidth < 1024) toggleSidebar(); 
+                };
+
+                const removeBtn = document.createElement('button');
+                removeBtn.className = "ml-1 w-7 h-7 flex items-center justify-center rounded text-gray-500 dark:text-slate-400 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/60 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all focus:outline-none flex-shrink-0";
+                removeBtn.innerHTML = `<i class="fa-solid fa-xmark text-base"></i>`;
+                removeBtn.title = "Hapus file";
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation(); 
+                    removeFile(file.id);
+                };
+
+                container.appendChild(fileBtn);
+                container.appendChild(removeBtn);
+                fileListEl.appendChild(container);
+            });
+        }
+
+        function removeFile(idToRemove) {
+            importedFiles = importedFiles.filter(f => f.id !== idToRemove);
+
+            if (activeSingleFileId === idToRemove) {
+                activeSingleFileId = null;
+                singleContentEl.classList.add('hidden');
+                singlePlaceholderEl.classList.remove('hidden');
+                headerTitleEl.innerHTML = `<i class="fa-solid fa-desktop text-gray-500 dark:text-slate-400"></i> Mode Layar Penuh`;
+            }
+
+            if (dropdownA.value === idToRemove) {
+                dropdownA.value = "-1";
+                renderPanel('a', "-1");
+            }
+            if (dropdownB.value === idToRemove) {
+                dropdownB.value = "-1";
+                renderPanel('b', "-1");
+            }
+
+            renderSidebarList();
+            updateSplitDropdowns();
+
+            if (importedFiles.length === 0 && isSplitMode) {
+                toggleSplitMode(false);
+            }
+        }
+
+        function openInSingleView(id) {
+            activeSingleFileId = id;
+            renderSidebarList(); 
+
+            const file = importedFiles.find(f => f.id === id);
+            if(!file) return;
+
+            headerTitleEl.innerHTML = `<i class="fa-solid fa-file-signature text-wcag-blue dark:text-blue-400"></i> ${file.name}`;
+
+            singlePlaceholderEl.classList.add('hidden');
+            singleContentEl.classList.remove('hidden');
+
+            renderMarkdown(file, singleContentEl);
+        }
+
+        function toggleSplitMode(forceState = null) {
+            if (forceState !== null) {
+                isSplitMode = forceState;
+            } else {
+                isSplitMode = !isSplitMode;
+            }
+
+            if (isSplitMode) {
+                viewSingleEl.classList.add('hidden');
+                viewSplitEl.classList.remove('hidden');
+                viewSplitEl.classList.add('flex');
+                
+                splitBtnText.innerText = "Layar Penuh";
+                splitIcon.className = "fa-solid fa-expand text-wcag-blue dark:text-blue-400";
+                headerTitleEl.innerHTML = `<i class="fa-solid fa-table-columns text-wcag-blue dark:text-blue-400"></i> Mode Belah Aktif`;
+
+                if (dropdownA.value == "-1" && activeSingleFileId !== null) {
+                    dropdownA.value = activeSingleFileId;
+                    renderPanel('a', activeSingleFileId);
+                }
+            } else {
+                viewSplitEl.classList.add('hidden');
+                viewSplitEl.classList.remove('flex');
+                viewSingleEl.classList.remove('hidden');
+                
+                splitBtnText.innerText = "Mode Belah";
+                splitIcon.className = "fa-solid fa-table-columns text-gray-700 dark:text-slate-300";
+                
+                const activeFile = importedFiles.find(f => f.id === activeSingleFileId);
+                if(activeSingleFileId !== null && activeFile) {
+                    headerTitleEl.innerHTML = `<i class="fa-solid fa-file-signature text-wcag-blue dark:text-blue-400"></i> ${activeFile.name}`;
+                } else {
+                    headerTitleEl.innerHTML = `<i class="fa-solid fa-desktop text-gray-500 dark:text-slate-400"></i> Mode Layar Penuh`;
+                }
+                renderSidebarList();
+            }
+        }
+
+        function updateSplitDropdowns() {
+            const currentA = dropdownA.value;
+            const currentB = dropdownB.value;
+
+            let optionsHtmlA = '<option value="-1">-- Pilih Dokumen Kiri --</option>';
+            let optionsHtmlB = '<option value="-1">-- Pilih Dokumen Kanan --</option>';
+            
+            importedFiles.forEach((file) => {
+                let option = `<option value="${file.id}">${file.name}</option>`;
+                optionsHtmlA += option;
+                optionsHtmlB += option;
+            });
+
+            dropdownA.innerHTML = optionsHtmlA;
+            dropdownB.innerHTML = optionsHtmlB;
+
+            dropdownA.value = importedFiles.some(f => f.id === currentA) ? currentA : "-1";
+            dropdownB.value = importedFiles.some(f => f.id === currentB) ? currentB : "-1";
+        }
+
+        function renderPanel(panelType, fileId) {
+            const contentEl = panelType === 'a' ? contentA : contentB;
+            const placeholderEl = panelType === 'a' ? placeholderA : placeholderB;
+
+            const file = importedFiles.find(f => f.id === fileId);
+
+            if (fileId === "-1" || !file) {
+                contentEl.innerHTML = '';
+                placeholderEl.style.display = 'flex';
+                return;
+            }
+
+            placeholderEl.style.display = 'none';
+            renderMarkdown(file, contentEl);
+        }
+
+        function renderMarkdown(file, containerElement) {
+            let htmlOutput = "";
+            if (file.ext === 'md') {
+                htmlOutput = DOMPurify.sanitize(marked.parse(file.content));
+            } else {
+                htmlOutput = `<pre><code>${DOMPurify.sanitize(file.content)}</code></pre>`;
+            }
+            containerElement.innerHTML = htmlOutput;
+        }
+    </script>
+</body>
+</html>
